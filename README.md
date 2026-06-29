@@ -239,11 +239,11 @@ Web Scraper Pro supports **4 currencies** with real-time conversion:
 
 ### Currency Conversion Rates
 
-| From | To INR | To USD | To EUR | To GBP |
-|------|--------|--------|--------|--------|
-| 1 INR | 1.00 | 0.012 | 0.011 | 0.0095 |
-| 1 USD | 83.12 | 1.00 | 0.92 | 0.79 |
-| 1 EUR | 90.91 | 1.09 | 1.00 | 0.86 |
+| From | To INR | To USD | To EUR | 
+|------|--------|--------|--------|
+| 1 INR | 1.00 | 0.012 | 0.011 |
+| 1 USD | 83.12 | 1.00 | 0.92 | 
+| 1 EUR | 90.91 | 1.09 | 1.00 |
 
 ### Currency Selector
 
