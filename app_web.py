@@ -1,6 +1,6 @@
 """
 E-Commerce Product Scraper - Advanced Version
-With Login, Registration, and User Data Storage
+With Multi-Currency Support (INR, USD, EUR, GBP)
 """
 
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
@@ -25,6 +25,38 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# ========================================
+# CURRENCY CONFIGURATION - REAL EXCHANGE RATES
+# ========================================
+CURRENCIES = {
+    'INR': {
+        'symbol': '₹',
+        'name': 'Indian Rupee',
+        'rate': 1.0,  # Base currency
+        'flag': '🇮🇳'
+    },
+    'USD': {
+        'symbol': '$',
+        'name': 'US Dollar',
+        'rate': 0.012,  # 1 INR = 0.012 USD
+        'flag': '🇺🇸'
+    },
+    'EUR': {
+        'symbol': '€',
+        'name': 'Euro',
+        'rate': 0.011,  # 1 INR = 0.011 EUR
+        'flag': '🇪🇺'
+    },
+    'GBP': {
+        'symbol': '£',
+        'name': 'British Pound',
+        'rate': 0.0095,  # 1 INR = 0.0095 GBP
+        'flag': '🇬🇧'
+    }
+}
+
+DEFAULT_CURRENCY = 'INR'
 
 # ========================================
 # USER DATABASE
@@ -71,6 +103,38 @@ def validate_password(password):
         return False, "Password must contain at least one number"
     return True, "Password is strong"
 
+def convert_currency(amount, from_currency, to_currency):
+    """Convert amount from one currency to another using INR as base"""
+    if amount == 'N/A' or amount == '' or amount is None:
+        return 'N/A'
+    try:
+        amount = float(amount)
+        
+        # If currencies are the same, return original
+        if from_currency == to_currency:
+            return amount
+        
+        # Convert to INR first (base currency)
+        if from_currency != 'INR' and from_currency in CURRENCIES:
+            # Convert from source to INR
+            amount = amount / CURRENCIES[from_currency]['rate']
+        elif from_currency not in CURRENCIES:
+            # If currency not in our list, assume it's already in INR
+            pass
+        
+        # Convert from INR to target
+        if to_currency != 'INR' and to_currency in CURRENCIES:
+            amount = amount * CURRENCIES[to_currency]['rate']
+        
+        return round(amount, 2)
+    except (ValueError, TypeError, ZeroDivisionError) as e:
+        logger.error(f"Currency conversion error: {e}")
+        return 'N/A'
+
+def get_currency_symbol(currency_code):
+    """Get currency symbol"""
+    return CURRENCIES.get(currency_code, {}).get('symbol', '₹')
+
 # ========================================
 # GLOBAL STATE
 # ========================================
@@ -85,6 +149,7 @@ scraping_status = {
 
 sessions = {}
 price_history = {}
+current_currency = DEFAULT_CURRENCY
 
 # ========================================
 # ROUTES
@@ -121,7 +186,6 @@ def register():
     password = data.get('password', '').strip()
     confirm_password = data.get('confirm_password', '').strip()
     
-    # Validate inputs
     if not username or not email or not password:
         return jsonify({
             'status': 'error',
@@ -147,17 +211,14 @@ def register():
             'message': msg
         }), 400
     
-    # Load existing users
     users = load_users()
     
-    # Check if username exists
     if username in users:
         return jsonify({
             'status': 'error',
             'message': 'Username already exists'
         }), 400
     
-    # Check if email exists
     for user_data in users.values():
         if user_data.get('email') == email:
             return jsonify({
@@ -165,25 +226,25 @@ def register():
                 'message': 'Email already registered'
             }), 400
     
-    # Create new user
     users[username] = {
         'username': username,
         'email': email,
         'password': hash_password(password),
         'created_at': datetime.now().isoformat(),
         'last_login': None,
+        'currency': DEFAULT_CURRENCY,
         'data': {
             'products': [],
             'wishlist': [],
             'sessions': {},
             'settings': {
                 'theme': 'default',
-                'dark_mode': False
+                'dark_mode': False,
+                'currency': DEFAULT_CURRENCY
             }
         }
     }
     
-    # Save users
     if save_users(users):
         return jsonify({
             'status': 'success',
@@ -211,28 +272,25 @@ def login():
     
     users = load_users()
     
-    # Check if user exists
     if username not in users:
         return jsonify({
             'status': 'error',
             'message': 'Invalid username or password'
         }), 400
     
-    # Check password
     if users[username]['password'] != hash_password(password):
         return jsonify({
             'status': 'error',
             'message': 'Invalid username or password'
         }), 400
     
-    # Update last login
     users[username]['last_login'] = datetime.now().isoformat()
     save_users(users)
     
     session['user'] = username
     session['logged_in'] = True
+    session['currency'] = users[username].get('currency', DEFAULT_CURRENCY)
     
-    # Load user's data
     load_user_data(username)
     
     return jsonify({
@@ -271,10 +329,58 @@ def user_profile():
     
     if username in users:
         user_data = users[username].copy()
-        user_data.pop('password', None)  # Remove password for security
+        user_data.pop('password', None)
         return jsonify(user_data)
     
     return jsonify({'error': 'User not found'}), 404
+
+# ========================================
+# CURRENCY API ENDPOINTS
+# ========================================
+@app.route('/api/currencies')
+def get_currencies():
+    """Get list of supported currencies"""
+    return jsonify(CURRENCIES)
+
+@app.route('/api/currency/set', methods=['POST'])
+def set_currency():
+    """Set user's preferred currency"""
+    global current_currency
+    
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    data = request.json
+    currency = data.get('currency', DEFAULT_CURRENCY)
+    
+    if currency not in CURRENCIES:
+        return jsonify({'error': 'Invalid currency'}), 400
+    
+    current_currency = currency
+    session['currency'] = currency
+    
+    # Save to user profile
+    users = load_users()
+    username = session.get('user')
+    if username in users:
+        users[username]['currency'] = currency
+        if 'data' in users[username] and 'settings' in users[username]['data']:
+            users[username]['data']['settings']['currency'] = currency
+        save_users(users)
+    
+    return jsonify({
+        'status': 'success',
+        'currency': currency,
+        'symbol': get_currency_symbol(currency)
+    })
+
+@app.route('/api/currency/current')
+def get_current_currency():
+    """Get current currency"""
+    return jsonify({
+        'currency': session.get('currency', DEFAULT_CURRENCY),
+        'symbol': get_currency_symbol(session.get('currency', DEFAULT_CURRENCY))
+    })
 
 # ========================================
 # USER DATA MANAGEMENT
@@ -285,10 +391,7 @@ def load_user_data(username):
     if username in users:
         user_data = users[username].get('data', {})
         scraping_status['products'] = user_data.get('products', [])
-        # Load wishlist
-        if 'wishlist' in user_data:
-            # Wishlist is stored in the frontend localStorage
-            pass
+        session['currency'] = users[username].get('currency', DEFAULT_CURRENCY)
 
 def save_user_data(username):
     """Save current session data to user's profile"""
@@ -297,6 +400,7 @@ def save_user_data(username):
         if 'data' not in users[username]:
             users[username]['data'] = {}
         users[username]['data']['products'] = scraping_status['products']
+        users[username]['data']['settings']['currency'] = session.get('currency', DEFAULT_CURRENCY)
         save_users(users)
 
 def is_valid_url(url):
@@ -397,7 +501,7 @@ def run_scraper(url, max_pages, max_products):
             clean_product = {
                 'name': str(p.get('name', 'N/A')),
                 'price': str(p.get('price', 'N/A')),
-                'currency': str(p.get('currency', '£')),
+                'currency': str(p.get('currency', 'GBP')),  # Books to scrape uses GBP
                 'rating': str(p.get('rating', 'N/A')),
                 'rating_count': str(p.get('rating_count', 'N/A')),
                 'availability': str(p.get('availability', 'N/A')),
@@ -426,7 +530,8 @@ def run_scraper(url, max_pages, max_products):
                 price = float(product['price']) if product['price'] != 'N/A' else 0
                 price_history[name].append({
                     'timestamp': timestamp,
-                    'price': price
+                    'price': price,
+                    'currency': product.get('currency', 'GBP')
                 })
             except:
                 pass
@@ -446,7 +551,6 @@ def run_scraper(url, max_pages, max_products):
         scraping_status['status'] = f'✅ Complete! Found {len(products)} products.'
         add_log(f'✅ Scraping complete! {len(products)} products saved.')
         
-        # Save user data
         username = session.get('user')
         if username:
             save_user_data(username)
@@ -469,7 +573,113 @@ def run_scraper(url, max_pages, max_products):
         add_log('🏁 Scraping finished')
 
 # ========================================
-# EXISTING ROUTES (Keep all existing routes)
+# PRODUCT ROUTES WITH FIXED PRICE DISPLAY
+# ========================================
+@app.route('/api/products')
+def get_products():
+    global scraping_status
+    
+    # If no products in memory, load from files
+    if not scraping_status['products']:
+        json_files = glob.glob('products_*.json')
+        if json_files:
+            latest_json = sorted(json_files)[-1]
+            try:
+                with open(latest_json, 'r', encoding='utf-8') as f:
+                    products = json.load(f)
+                if products and isinstance(products, list):
+                    scraping_status['products'] = products
+                    logger.info(f"Loaded {len(products)} products from JSON")
+            except Exception as e:
+                logger.error(f"Error loading JSON: {e}")
+        
+        csv_files = glob.glob('products_*.csv')
+        if csv_files and not scraping_status['products']:
+            latest_csv = sorted(csv_files)[-1]
+            try:
+                df = pd.read_csv(latest_csv)
+                products = df.to_dict('records')
+                cleaned = []
+                for p in products:
+                    if p and isinstance(p, dict):
+                        clean = {
+                            'name': str(p.get('name', 'N/A')),
+                            'price': str(p.get('price', 'N/A')),
+                            'currency': str(p.get('currency', 'GBP')),
+                            'rating': str(p.get('rating', 'N/A')),
+                            'rating_count': str(p.get('rating_count', 'N/A')),
+                            'availability': str(p.get('availability', 'N/A')),
+                            'category': str(p.get('category', 'Uncategorized')),
+                            'url': str(p.get('url', '')),
+                            'extracted_at': str(p.get('extracted_at', datetime.now().isoformat()))
+                        }
+                        cleaned.append(clean)
+                scraping_status['products'] = cleaned
+                logger.info(f"Loaded {len(cleaned)} products from CSV")
+            except Exception as e:
+                logger.error(f"Error loading CSV: {e}")
+    
+    # If still no products, return empty list
+    if not scraping_status['products']:
+        return jsonify([])
+    
+    # Convert prices to current currency
+    target_currency = session.get('currency', DEFAULT_CURRENCY)
+    converted_products = []
+    
+    for product in scraping_status['products']:
+        converted = product.copy()
+        
+        # Get price and currency
+        price_str = product.get('price', 'N/A')
+        source_currency = product.get('currency', 'GBP')
+        
+        # Handle N/A or empty price
+        if price_str == 'N/A' or price_str == '' or price_str is None:
+            converted['price'] = 'N/A'
+            converted['currency'] = target_currency
+            converted['display_price'] = 'N/A'
+            converted['original_price'] = 'N/A'
+            converted['original_currency'] = source_currency
+        else:
+            try:
+                # Clean price string
+                clean_price = str(price_str).replace(',', '').strip()
+                price_value = float(clean_price)
+                
+                # Store original price and currency
+                converted['original_price'] = price_value
+                converted['original_currency'] = source_currency
+                
+                # Convert if needed
+                if source_currency != target_currency:
+                    converted_price = convert_currency(price_value, source_currency, target_currency)
+                    if converted_price == 'N/A':
+                        converted_price = price_value
+                        converted['currency'] = source_currency
+                    else:
+                        converted['currency'] = target_currency
+                else:
+                    converted_price = price_value
+                    converted['currency'] = target_currency
+                
+                # Store as string
+                converted['price'] = str(converted_price)
+                converted['display_price'] = f"{get_currency_symbol(converted['currency'])}{converted_price:.2f}"
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Price conversion failed for {product.get('name', 'Unknown')}: {e}")
+                converted['price'] = price_str
+                converted['currency'] = source_currency
+                converted['display_price'] = f"{get_currency_symbol(source_currency)}{price_str}"
+                converted['original_price'] = price_str
+                converted['original_currency'] = source_currency
+        
+        converted_products.append(converted)
+    
+    return jsonify(converted_products)
+
+# ========================================
+# EXISTING ROUTES
 # ========================================
 
 @app.route('/api/status')
@@ -484,40 +694,6 @@ def get_status():
         'logs': scraping_status.get('logs', [])
     })
 
-@app.route('/api/products')
-def get_products():
-    global scraping_status
-    if not scraping_status['products']:
-        json_files = glob.glob('products_*.json')
-        if json_files:
-            latest_json = sorted(json_files)[-1]
-            try:
-                with open(latest_json, 'r', encoding='utf-8') as f:
-                    products = json.load(f)
-                if products and isinstance(products, list):
-                    scraping_status['products'] = products
-                    return jsonify(products)
-            except:
-                pass
-        
-        csv_files = glob.glob('products_*.csv')
-        if csv_files:
-            latest_csv = sorted(csv_files)[-1]
-            try:
-                df = pd.read_csv(latest_csv)
-                products = df.to_dict('records')
-                cleaned = []
-                for p in products:
-                    if p and isinstance(p, dict):
-                        clean = {k: str(v) if v is not None else 'N/A' for k, v in p.items()}
-                        cleaned.append(clean)
-                scraping_status['products'] = cleaned
-                return jsonify(cleaned)
-            except:
-                pass
-    
-    return jsonify(scraping_status['products'])
-
 @app.route('/api/products/stats')
 def get_stats():
     global scraping_status
@@ -529,6 +705,7 @@ def get_stats():
     ratings = {}
     price_ranges = {'0-10': 0, '10-20': 0, '20-30': 0, '30-40': 0, '40-50': 0, '50-60': 0, '60+': 0}
     prices = []
+    target_currency = session.get('currency', DEFAULT_CURRENCY)
     
     for p in products:
         cat = p.get('category', 'Uncategorized')
@@ -537,28 +714,37 @@ def get_stats():
         if rating != 'N/A':
             ratings[rating] = ratings.get(rating, 0) + 1
         try:
-            price = float(p.get('price', '0'))
-            prices.append(price)
-            if price < 10: price_ranges['0-10'] += 1
-            elif price < 20: price_ranges['10-20'] += 1
-            elif price < 30: price_ranges['20-30'] += 1
-            elif price < 40: price_ranges['30-40'] += 1
-            elif price < 50: price_ranges['40-50'] += 1
-            elif price < 60: price_ranges['50-60'] += 1
-            else: price_ranges['60+'] += 1
-        except:
+            price_str = p.get('price', '0')
+            if price_str != 'N/A' and price_str != '':
+                price = float(str(price_str).replace(',', ''))
+                if p.get('currency') and p.get('currency') != target_currency:
+                    price = convert_currency(price, p.get('currency', 'GBP'), target_currency)
+                if isinstance(price, (int, float)):
+                    prices.append(price)
+                    if price < 10: price_ranges['0-10'] += 1
+                    elif price < 20: price_ranges['10-20'] += 1
+                    elif price < 30: price_ranges['20-30'] += 1
+                    elif price < 40: price_ranges['30-40'] += 1
+                    elif price < 50: price_ranges['40-50'] += 1
+                    elif price < 60: price_ranges['50-60'] += 1
+                    else: price_ranges['60+'] += 1
+        except (ValueError, TypeError):
             pass
+    
+    avg_price = sum(prices) / len(prices) if prices else 0
     
     return jsonify({
         'total': len(products),
         'categories': categories,
         'ratings': ratings,
         'price_ranges': price_ranges,
-        'avg_price': sum(prices) / len(prices) if prices else 0,
+        'avg_price': avg_price,
         'min_price': min(prices) if prices else 0,
         'max_price': max(prices) if prices else 0,
         'avg_rating': sum(float(r) for r in ratings.keys()) / len(ratings) if ratings else 0,
-        'category_count': len(categories)
+        'category_count': len(categories),
+        'currency': target_currency,
+        'currency_symbol': get_currency_symbol(target_currency)
     })
 
 @app.route('/api/export/chart/<chart_type>')
@@ -576,32 +762,60 @@ def export_chart(chart_type):
         fig, ax = plt.subplots(figsize=(10, 6))
         plt.style.use('seaborn-v0_8')
         
+        target_currency = session.get('currency', DEFAULT_CURRENCY)
+        currency_symbol = get_currency_symbol(target_currency)
+        
         if chart_type == 'price':
-            prices = [float(p.get('price', 0)) for p in products if p.get('price', 'N/A') != 'N/A']
-            ax.hist(prices, bins=10, color='#d63384', edgecolor='white', alpha=0.7)
-            ax.set_title('Price Distribution', fontsize=14, fontweight='bold')
-            ax.set_xlabel('Price (£)')
-            ax.set_ylabel('Number of Books')
-            ax.grid(True, alpha=0.3)
+            prices = []
+            for p in products:
+                if p.get('price', 'N/A') != 'N/A' and p.get('price', '') != '':
+                    try:
+                        price = float(str(p['price']).replace(',', ''))
+                        if p.get('currency') and p.get('currency') != target_currency:
+                            price = convert_currency(price, p.get('currency', 'GBP'), target_currency)
+                        if isinstance(price, (int, float)):
+                            prices.append(price)
+                    except (ValueError, TypeError):
+                        pass
+            if prices:
+                ax.hist(prices, bins=10, color='#d63384', edgecolor='white', alpha=0.7)
+                ax.set_title(f'Price Distribution ({currency_symbol})', fontsize=14, fontweight='bold')
+                ax.set_xlabel(f'Price ({currency_symbol})')
+                ax.set_ylabel('Number of Books')
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, 'No price data available', ha='center', va='center', transform=ax.transAxes)
         elif chart_type == 'rating':
-            ratings = [int(p.get('rating', 0)) for p in products if p.get('rating', 'N/A') != 'N/A']
-            rating_counts = {i: ratings.count(i) for i in range(1, 6)}
-            ax.bar(rating_counts.keys(), rating_counts.values(), color='#6f42c1', edgecolor='white')
-            ax.set_title('Rating Distribution', fontsize=14, fontweight='bold')
-            ax.set_xlabel('Rating (Stars)')
-            ax.set_ylabel('Number of Books')
-            ax.set_xticks(range(1, 6))
-            ax.grid(True, alpha=0.3)
+            ratings = []
+            for p in products:
+                if p.get('rating', 'N/A') != 'N/A':
+                    try:
+                        ratings.append(int(p['rating']))
+                    except (ValueError, TypeError):
+                        pass
+            if ratings:
+                rating_counts = {i: ratings.count(i) for i in range(1, 6)}
+                ax.bar(rating_counts.keys(), rating_counts.values(), color='#6f42c1', edgecolor='white')
+                ax.set_title('Rating Distribution', fontsize=14, fontweight='bold')
+                ax.set_xlabel('Rating (Stars)')
+                ax.set_ylabel('Number of Books')
+                ax.set_xticks(range(1, 6))
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, 'No rating data available', ha='center', va='center', transform=ax.transAxes)
         elif chart_type == 'category':
             categories = {}
             for p in products:
                 cat = p.get('category', 'Uncategorized')
                 categories[cat] = categories.get(cat, 0) + 1
             categories = dict(sorted(categories.items(), key=lambda x: x[1], reverse=True)[:10])
-            ax.barh(list(categories.keys()), list(categories.values()), color='#d63384')
-            ax.set_title('Top Categories', fontsize=14, fontweight='bold')
-            ax.set_xlabel('Number of Books')
-            ax.grid(True, alpha=0.3)
+            if categories:
+                ax.barh(list(categories.keys()), list(categories.values()), color='#d63384')
+                ax.set_title('Top Categories', fontsize=14, fontweight='bold')
+                ax.set_xlabel('Number of Books')
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, 'No category data available', ha='center', va='center', transform=ax.transAxes)
         else:
             return jsonify({'error': 'Invalid chart type'}), 400
         
@@ -625,6 +839,12 @@ def export_csv():
         return jsonify({'error': 'No data to export'}), 400
     
     df = pd.DataFrame(scraping_status['products'])
+    target_currency = session.get('currency', DEFAULT_CURRENCY)
+    
+    # Add display columns
+    df['display_currency'] = target_currency
+    df['display_currency_symbol'] = get_currency_symbol(target_currency)
+    
     filename = f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     df.to_csv(filename, index=False)
     return send_file(filename, as_attachment=True)
@@ -669,7 +889,8 @@ def generate_qr():
         data = {
             'total': len(scraping_status['products']),
             'timestamp': datetime.now().isoformat(),
-            'categories': len(set(p.get('category', 'Uncategorized') for p in scraping_status['products']))
+            'categories': len(set(p.get('category', 'Uncategorized') for p in scraping_status['products'])),
+            'currency': session.get('currency', DEFAULT_CURRENCY)
         }
         
         qr = qrcode.QRCode(
@@ -701,6 +922,9 @@ def export_report():
     if not products:
         return jsonify({'error': 'No data'}), 404
     
+    target_currency = session.get('currency', DEFAULT_CURRENCY)
+    currency_symbol = get_currency_symbol(target_currency)
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -723,18 +947,19 @@ def export_report():
     <body>
         <h1>📊 Product Report</h1>
         <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p>Currency: {target_currency} ({currency_symbol})</p>
         
         <div class="summary">
             <div class="stat"><div class="value">{len(products)}</div><div class="label">Total Products</div></div>
-            <div class="stat"><div class="value">£{sum(float(p.get('price',0)) for p in products if p.get('price','N/A')!='N/A')/len(products) if products else 0:.2f}</div><div class="label">Avg Price</div></div>
+            <div class="stat"><div class="value">{currency_symbol}{sum(float(p.get('price',0)) for p in products if p.get('price','N/A')!='N/A')/len(products) if products else 0:.2f}</div><div class="label">Avg Price</div></div>
             <div class="stat"><div class="value">{sum(int(p.get('rating',0)) for p in products if p.get('rating','N/A')!='N/A')/len(products) if products else 0:.1f}</div><div class="label">Avg Rating</div></div>
             <div class="stat"><div class="value">{len(set(p.get('category','Uncategorized') for p in products))}</div><div class="label">Categories</div></div>
         </div>
         
         <table>
-            <thead><tr><th>Name</th><th>Price</th><th>Rating</th><th>Category</th></tr></thead>
+            <thead><tr><th>Name</th><th>Price ({currency_symbol})</th><th>Rating</th><th>Category</th></tr></thead>
             <tbody>
-                {''.join(f'<tr><td>{p.get("name","N/A")}</td><td>{p.get("currency","£")}{p.get("price","N/A")}</td><td>{"★"*int(p.get("rating",0))}{"☆"*(5-int(p.get("rating",0)))}</td><td>{p.get("category","Uncategorized")}</td></tr>' for p in products[:50])}
+                {''.join(f'<tr><td>{p.get("name","N/A")}</td><td>{currency_symbol}{p.get("price","N/A")}</td><td>{"★"*int(p.get("rating",0))}{"☆"*(5-int(p.get("rating",0)))}</td><td>{p.get("category","Uncategorized")}</td></tr>' for p in products[:50])}
                 {'' if len(products) <= 50 else f'<tr><td colspan="4" style="text-align:center;">... and {len(products)-50} more products</td></tr>'}
             </tbody>
         </table>
@@ -886,12 +1111,14 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("🕸️ Web Scraper Pro - Advanced v4.0")
     print("="*60)
+    print(f"💰 Supported Currencies: INR (₹), USD ($), EUR (€), GBP (£)")
+    print("="*60)
     
     load_existing_data()
     
     print("\n🚀 Starting server on http://127.0.0.1:5000")
     print("🔐 Registration and Login System Active")
-    print("📱 Features: Login, Register, Wishlist, Compare, Quick Stats, Auto-Tags")
+    print("💱 Multi-Currency Support Available (INR as base)")
     print("⏹️ Press Ctrl+C to stop")
     print("="*60 + "\n")
     app.run(debug=True, port=5000)
