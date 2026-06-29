@@ -1,6 +1,6 @@
 """
 E-Commerce Product Scraper - Advanced Version
-With Login Page and Unrestricted URL Support
+With Login, Registration, and User Data Storage
 """
 
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
@@ -16,6 +16,8 @@ import requests
 from urllib.parse import urlparse
 import io
 import secrets
+import hashlib
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,7 +26,54 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Global state
+# ========================================
+# USER DATABASE
+# ========================================
+USERS_FILE = 'users.json'
+
+def load_users():
+    """Load users from JSON file"""
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_users(users):
+    """Save users to JSON file"""
+    try:
+        with open(USERS_FILE, 'w') as f:
+            json.dump(users, f, indent=2)
+        return True
+    except:
+        return False
+
+def hash_password(password):
+    """Hash password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def validate_email(email):
+    """Validate email format"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def validate_password(password):
+    """Validate password strength"""
+    if len(password) < 6:
+        return False, "Password must be at least 6 characters"
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r'[0-9]', password):
+        return False, "Password must contain at least one number"
+    return True, "Password is strong"
+
+# ========================================
+# GLOBAL STATE
+# ========================================
 scraping_status = {
     'in_progress': False,
     'progress': 0,
@@ -34,18 +83,12 @@ scraping_status = {
     'logs': []
 }
 
-# Session storage
 sessions = {}
 price_history = {}
 
-def is_valid_url(url):
-    """Check if URL is valid"""
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except:
-        return False
-
+# ========================================
+# ROUTES
+# ========================================
 @app.route('/')
 def index():
     if not session.get('logged_in'):
@@ -59,32 +102,151 @@ def login_page():
         return redirect(url_for('index'))
     return render_template('login.html')
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    """Handle login"""
+@app.route('/register')
+def register_page():
+    """Register page"""
+    if session.get('logged_in'):
+        return redirect(url_for('index'))
+    return render_template('register.html')
+
+# ========================================
+# AUTH API ENDPOINTS
+# ========================================
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Handle user registration"""
     data = request.json
     username = data.get('username', '').strip()
+    email = data.get('email', '').strip()
     password = data.get('password', '').strip()
+    confirm_password = data.get('confirm_password', '').strip()
     
-    # Simple authentication - accept any non-empty credentials
-    # For production, use proper authentication
-    if username and password:
-        session['user'] = username
-        session['logged_in'] = True
+    # Validate inputs
+    if not username or not email or not password:
+        return jsonify({
+            'status': 'error',
+            'message': 'All fields are required'
+        }), 400
+    
+    if password != confirm_password:
+        return jsonify({
+            'status': 'error',
+            'message': 'Passwords do not match'
+        }), 400
+    
+    if not validate_email(email):
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid email format'
+        }), 400
+    
+    is_valid, msg = validate_password(password)
+    if not is_valid:
+        return jsonify({
+            'status': 'error',
+            'message': msg
+        }), 400
+    
+    # Load existing users
+    users = load_users()
+    
+    # Check if username exists
+    if username in users:
+        return jsonify({
+            'status': 'error',
+            'message': 'Username already exists'
+        }), 400
+    
+    # Check if email exists
+    for user_data in users.values():
+        if user_data.get('email') == email:
+            return jsonify({
+                'status': 'error',
+                'message': 'Email already registered'
+            }), 400
+    
+    # Create new user
+    users[username] = {
+        'username': username,
+        'email': email,
+        'password': hash_password(password),
+        'created_at': datetime.now().isoformat(),
+        'last_login': None,
+        'data': {
+            'products': [],
+            'wishlist': [],
+            'sessions': {},
+            'settings': {
+                'theme': 'default',
+                'dark_mode': False
+            }
+        }
+    }
+    
+    # Save users
+    if save_users(users):
         return jsonify({
             'status': 'success',
-            'message': f'Welcome {username}!',
-            'redirect': '/'
+            'message': 'Registration successful! Please login.',
+            'redirect': '/login'
         })
     else:
         return jsonify({
             'status': 'error',
+            'message': 'Failed to save user data'
+        }), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Handle user login"""
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+    
+    if not username or not password:
+        return jsonify({
+            'status': 'error',
             'message': 'Please enter username and password'
         }), 400
+    
+    users = load_users()
+    
+    # Check if user exists
+    if username not in users:
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid username or password'
+        }), 400
+    
+    # Check password
+    if users[username]['password'] != hash_password(password):
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid username or password'
+        }), 400
+    
+    # Update last login
+    users[username]['last_login'] = datetime.now().isoformat()
+    save_users(users)
+    
+    session['user'] = username
+    session['logged_in'] = True
+    
+    # Load user's data
+    load_user_data(username)
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'Welcome back {username}!',
+        'redirect': '/'
+    })
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
     """Handle logout"""
+    username = session.get('user')
+    if username:
+        save_user_data(username)
     session.clear()
     return jsonify({'status': 'success', 'message': 'Logged out successfully'})
 
@@ -98,6 +260,56 @@ def check_auth():
         })
     return jsonify({'logged_in': False})
 
+@app.route('/api/user/profile')
+def user_profile():
+    """Get user profile"""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    users = load_users()
+    username = session.get('user')
+    
+    if username in users:
+        user_data = users[username].copy()
+        user_data.pop('password', None)  # Remove password for security
+        return jsonify(user_data)
+    
+    return jsonify({'error': 'User not found'}), 404
+
+# ========================================
+# USER DATA MANAGEMENT
+# ========================================
+def load_user_data(username):
+    """Load user's data into session"""
+    users = load_users()
+    if username in users:
+        user_data = users[username].get('data', {})
+        scraping_status['products'] = user_data.get('products', [])
+        # Load wishlist
+        if 'wishlist' in user_data:
+            # Wishlist is stored in the frontend localStorage
+            pass
+
+def save_user_data(username):
+    """Save current session data to user's profile"""
+    users = load_users()
+    if username in users:
+        if 'data' not in users[username]:
+            users[username]['data'] = {}
+        users[username]['data']['products'] = scraping_status['products']
+        save_users(users)
+
+def is_valid_url(url):
+    """Check if URL is valid"""
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
+# ========================================
+# SCRAPING ROUTES
+# ========================================
 @app.route('/api/scrape', methods=['POST'])
 def scrape():
     global scraping_status
@@ -234,6 +446,11 @@ def run_scraper(url, max_pages, max_products):
         scraping_status['status'] = f'✅ Complete! Found {len(products)} products.'
         add_log(f'✅ Scraping complete! {len(products)} products saved.')
         
+        # Save user data
+        username = session.get('user')
+        if username:
+            save_user_data(username)
+        
         try:
             with open('price_history.json', 'w') as f:
                 json.dump(price_history, f)
@@ -250,6 +467,10 @@ def run_scraper(url, max_pages, max_products):
     finally:
         scraping_status['in_progress'] = False
         add_log('🏁 Scraping finished')
+
+# ========================================
+# EXISTING ROUTES (Keep all existing routes)
+# ========================================
 
 @app.route('/api/status')
 def get_status():
@@ -394,6 +615,8 @@ def export_chart(chart_type):
                         download_name=f'{chart_type}_chart_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
     except ImportError:
         return jsonify({'error': 'Matplotlib not installed'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Chart export failed: {str(e)}'}), 500
 
 @app.route('/api/export/csv')
 def export_csv():
@@ -431,6 +654,45 @@ def export_excel():
         return send_file(filename, as_attachment=True)
     except ImportError:
         return jsonify({'error': 'Excel export requires openpyxl'}), 500
+
+@app.route('/api/export/qr')
+def generate_qr():
+    """Generate QR code for sharing data"""
+    global scraping_status
+    if not scraping_status['products']:
+        return jsonify({'error': 'No data to generate QR code'}), 404
+    
+    try:
+        import qrcode
+        from io import BytesIO
+        
+        data = {
+            'total': len(scraping_status['products']),
+            'timestamp': datetime.now().isoformat(),
+            'categories': len(set(p.get('category', 'Uncategorized') for p in scraping_status['products']))
+        }
+        
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(json.dumps(data))
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="#d63384", back_color="white")
+        
+        img_io = BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+        
+        return send_file(img_io, mimetype='image/png', 
+                        download_name=f'qr_code_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+    except ImportError:
+        return jsonify({'error': 'QR code module not installed. Run: pip install qrcode pillow'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate QR: {str(e)}'}), 500
 
 @app.route('/api/export/report')
 def export_report():
@@ -628,8 +890,8 @@ if __name__ == '__main__':
     load_existing_data()
     
     print("\n🚀 Starting server on http://127.0.0.1:5000")
-    print("🌐 Any valid URL can be scraped")
-    print("📱 Features: Login, Wishlist, Compare, Quick Stats, Auto-Tags")
+    print("🔐 Registration and Login System Active")
+    print("📱 Features: Login, Register, Wishlist, Compare, Quick Stats, Auto-Tags")
     print("⏹️ Press Ctrl+C to stop")
     print("="*60 + "\n")
     app.run(debug=True, port=5000)
