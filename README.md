@@ -103,39 +103,207 @@ Web Scraper Pro is a **feature-rich, production-ready web scraping application**
 
 ---
 
-## 📸 **Screenshots**
+<div align="center">
+
+# 🕸️ Web Scraper Pro
+
+### *Professional Web Scraping & Data Analytics Platform*
+
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3.3-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge&logo=mit&logoColor=white)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/web-scraper-pro/pulls)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+- [About The Project](#-about-the-project)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [Screenshots](#-screenshots)
+- [Getting Started](#-getting-started)
+- [How to Use](#-how-to-use)
+- [Keyboard Shortcuts](#-keyboard-shortcuts)
+- [Themes Gallery](#-themes-gallery)
+- [Troubleshooting](#-troubleshooting)
+- [Dependencies](#-dependencies)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+- [Contact](#-contact)
+
+---
+
+## 🌟 About The Project
+
+Web Scraper Pro is a **feature-rich, production-ready web scraping application** that transforms raw web data into actionable insights. Built with Python Flask and modern web technologies, it offers a seamless experience for extracting, visualizing, and exporting product data.
+
+### 🎯 Why Web Scraper Pro?
+
+- 🔥 **No-code scraping** - Just enter a URL and click start
+- 📊 **Real-time analytics** - Watch data come alive with interactive charts
+- 🎨 **Beautiful UI** - 5 stunning themes with dark mode
+- 📱 **Fully responsive** - Works on desktop, tablet, and mobile
+- 🔒 **Secure** - Built-in authentication and session management
+
+---
+
+## ✨ Key Features
+
+### 🔐 **Authentication & Security**
+- 🚪 Secure login with glass-morphism UI
+- 👤 User session management
+- 🔑 Demo credentials for quick testing
+
+### 🕷️ **Web Scraping Engine**
+- 🌐 Scrape any valid URL
+- 📄 Multi-page pagination support
+- 📦 Batch processing with max product limits
+- 📊 Real-time progress tracking
+- 📋 Live logging system
+
+### 📊 **Data Visualization**
+- 📈 Price distribution charts
+- 🥧 Category distribution charts
+- ⭐ Rating distribution charts
+- 🖼️ Export charts as PNG images
+
+### 🔍 **Product Management**
+- 🔎 Advanced search with autocomplete
+- 📂 Smart category filtering
+- 📊 Multiple sort options (Name, Price, Rating, Best Value)
+- ❤️ Wishlist/Favorites system
+- ⚖️ Side-by-side product comparison
+- 🏷️ Auto-generated smart tags
+- 📈 Price history tracking
+
+### 📤 **Export & Reporting**
+- 📊 CSV export
+- 📄 JSON export
+- 📈 Excel export
+- 📄 HTML report generation
+- 📱 QR code sharing
+
+### 💾 **Data Persistence**
+- 💾 Save sessions
+- 📂 Load sessions
+- 🗑️ Delete sessions
+- 🔄 Auto-data refresh
+
+### 🎨 **UI/UX Excellence**
+- 🎨 5 unique themes
+- 🌙 Dark mode toggle
+- 📱 Fully responsive design
+- 🖼️ Grid/Table view toggle
+- 🔔 Desktop notifications
+- ⌨️ Keyboard shortcuts
+
+---
+
+## 🛠️ Tech Stack
 
 <div align="center">
 
-### 🔐 **Login Page**
-<img src="screenshots/login.png" alt="Login Page" width="600"/>
+| Category | Technologies |
+|----------|--------------|
+| **Backend** | Python, Flask |
+| **Scraping** | BeautifulSoup4, Requests |
+| **Data Processing** | Pandas, NumPy |
+| **Visualization** | Chart.js, Matplotlib |
+| **Frontend** | HTML5, CSS3, JavaScript |
+| **Icons** | Font Awesome |
+| **Graphics** | Pillow, QRCode |
+| **Database** | JSON (file-based) |
 
-### 🏠 **Dashboard**
-<img src="screenshots/homebs.png" alt="Dashboard" width="600"/>
+</div>
 
-### 📊 **After Scraping**
-<img src="screenshots/afterscrap.png" alt="After Scraping" width="600"/>
+---
 
-### 📈 **Charts & Analytics**
-<img src="screenshots/chart.png" alt="Charts" width="600"/>
+## 📸 Screenshots
 
-### ⚖️ **Product Comparison**
-<img src="screenshots/compare.png" alt="Compare" width="600"/>
+### 🔐 Login Page
 
-### 🌙 **Dark Mode**
-<img src="screenshots/darkmode.png" alt="Dark Mode" width="600"/>
+![Login Page](screenshots/login.png)
 
-### 💡 **Insights Dashboard**
-<img src="screenshots/insights.png" alt="Insights" width="600"/>
+---
 
-### 📤 **Export Options**
-<img src="screenshots/export.png" alt="Export" width="600"/>
+### 🏠 Dashboard Home
 
-### 📋 **Price History**
-<img src="screenshots/pricehist.png" alt="Price History" width="600"/>
+![Dashboard Home](screenshots/homebs.png)
 
-### 💾 **Sessions**
-<img src="screenshots/sessions.png" alt="Sessions" width="600"/>
+---
+
+### 📊 After Scraping
+
+![After Scraping](screenshots/afterscrap.png)
+
+---
+
+### 📈 Charts & Analytics
+
+![Charts](screenshots/chart.png)
+
+---
+
+### ⚖️ Compare Products
+
+![Compare](screenshots/compare.png)
+
+---
+
+### 🌙 Dark Mode
+
+![Dark Mode](screenshots/darkmode.png)
+
+---
+
+### 💡 Insights Dashboard
+
+![Insights](screenshots/insights.png)
+
+---
+
+### 📤 Export Options
+
+![Export](screenshots/export.png)
+
+---
+
+### 📋 Price History
+
+![Price History](screenshots/pricehist.png)
+
+---
+
+### 🗑️ Scraping Progress
+
+![Scraping](screenshots/scraps.png)
+
+---
+
+### 💾 Sessions Management
+
+![Sessions](screenshots/sessions.png)
+
+---
+
+
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+- Git (optional)
+
+### 💻 Installation
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/web-scraper-pro.git
+cd web-scraper-pro
 
 </div>
 
