@@ -220,6 +220,36 @@ Web Scraper Pro is a **feature-rich, production-ready web scraping application**
 </div>
 
 ---
+## 💰 Multi-Currency Support
+
+Web Scraper Pro supports **4 currencies** with real-time conversion:
+
+| Currency | Symbol | Flag | Code |
+|----------|--------|------|------|
+| Indian Rupee | ₹ | 🇮🇳 | INR |
+| US Dollar | $ | 🇺🇸 | USD |
+| Euro | € | 🇪🇺 | EUR |
+
+### How It Works
+
+1. **Default Currency**: INR (Indian Rupee)
+2. **Conversion Base**: All prices are converted using INR as the base currency
+3. **User Preference**: Your currency preference is saved in your user profile
+4. **Real-time Display**: Prices automatically update when you change currency
+
+### Currency Conversion Rates
+
+| From | To INR | To USD | To EUR | To GBP |
+|------|--------|--------|--------|--------|
+| 1 INR | 1.00 | 0.012 | 0.011 | 0.0095 |
+| 1 USD | 83.12 | 1.00 | 0.92 | 0.79 |
+| 1 EUR | 90.91 | 1.09 | 1.00 | 0.86 |
+
+### Currency Selector
+
+You can change currency from:
+- **Header Dropdown**: Quick access on every page
+- **Settings Page**: With visual currency options
 
 ## 📸 Screenshots
 
