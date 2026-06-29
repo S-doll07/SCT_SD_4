@@ -1,6 +1,5 @@
 """
-E-Commerce Web Scraper - Working with books.toscrape.com
-Fixed URL generation issue
+E-Commerce Web Scraper - Fixed Price Extraction
 """
 
 import requests
@@ -12,7 +11,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Optional
 import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import random
 
 # Configure logging
@@ -32,7 +31,7 @@ class ECommerceScraper:
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.headers = headers or {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         self.session.headers.update(self.headers)
         self.products = []
@@ -55,7 +54,7 @@ class ECommerceScraper:
             'url': product_url,
             'name': 'N/A',
             'price': 'N/A',
-            'currency': '£',
+            'currency': 'USD',
             'rating': 'N/A',
             'rating_count': 'N/A',
             'availability': 'N/A',
@@ -65,20 +64,70 @@ class ECommerceScraper:
             'extracted_at': datetime.now().isoformat()
         }
         
-        # Name
-        name_elem = soup.select_one('h1')
-        if name_elem:
-            product['name'] = name_elem.text.strip()
+        # Name - Try multiple selectors
+        name_selectors = ['h1', '.product-title', '.product-name', '.product_main h1']
+        for selector in name_selectors:
+            name_elem = soup.select_one(selector)
+            if name_elem:
+                product['name'] = name_elem.text.strip()
+                break
         
-        # Price
-        price_elem = soup.select_one('.price_color')
-        if price_elem:
-            price_text = price_elem.text.strip()
-            price_match = re.search(r'[\d,]+\.?\d*', price_text)
-            if price_match:
-                product['price'] = price_match.group().replace(',', '')
-                if '£' in price_text:
-                    product['currency'] = '£'
+        # Price - Try multiple selectors for books.toscrape.com
+        price_selectors = [
+            '.price_color',           # Books to scrape
+            '.price',                 # Generic
+            '.product-price',         # Generic
+            '.current-price',         # Generic
+            '.sale-price',            # Generic
+            '.price-now',             # Generic
+            '.price-box .price',      # Generic
+            '.product_main .price_color'  # Books to scrape specific
+        ]
+        
+        for selector in price_selectors:
+            price_elem = soup.select_one(selector)
+            if price_elem:
+                price_text = price_elem.text.strip()
+                # Extract numeric price using regex (handles £, $, €, ₹)
+                price_match = re.search(r'[\d,]+\.?\d*', price_text)
+                if price_match:
+                    product['price'] = price_match.group().replace(',', '')
+                    # Detect currency
+                    if '£' in price_text:
+                        product['currency'] = 'GBP'
+                    elif '€' in price_text:
+                        product['currency'] = 'EUR'
+                    elif '$' in price_text:
+                        product['currency'] = 'USD'
+                    elif '₹' in price_text:
+                        product['currency'] = 'INR'
+                    else:
+                        product['currency'] = 'USD'
+                    break
+        
+        # If price not found, try looking in the whole page for price patterns
+        if product['price'] == 'N/A':
+            # Search for price pattern in the page
+            page_text = soup.get_text()
+            price_patterns = [
+                r'£([\d,]+\.?\d*)',
+                r'\$([\d,]+\.?\d*)',
+                r'€([\d,]+\.?\d*)',
+                r'₹([\d,]+\.?\d*)'
+            ]
+            for pattern in price_patterns:
+                match = re.search(pattern, page_text)
+                if match:
+                    product['price'] = match.group(1).replace(',', '')
+                    if '£' in pattern:
+                        product['currency'] = 'GBP'
+                    elif '$' in pattern:
+                        product['currency'] = 'USD'
+                    elif '€' in pattern:
+                        product['currency'] = 'EUR'
+                    elif '₹' in pattern:
+                        product['currency'] = 'INR'
+                    break
         
         # Rating
         rating_elem = soup.select_one('.star-rating')
@@ -92,6 +141,8 @@ class ECommerceScraper:
         
         # Availability
         avail_elem = soup.select_one('.instock.availability')
+        if not avail_elem:
+            avail_elem = soup.select_one('.availability')
         if avail_elem:
             product['availability'] = avail_elem.text.strip()
         
@@ -109,20 +160,17 @@ class ECommerceScraper:
                 product['sku'] = td.text.strip()
                 break
         
-        # Category (breadcrumb) - Improved version
+        # Category
         breadcrumb = soup.select('.breadcrumb li')
         if len(breadcrumb) >= 3:
-            # Get the last breadcrumb item (before the current page)
-            category_elem = breadcrumb[-2]
-            product['category'] = category_elem.text.strip()
+            product['category'] = breadcrumb[2].text.strip()
         elif len(breadcrumb) == 2:
             product['category'] = breadcrumb[1].text.strip()
         else:
-            # Try alternative: look for category in the URL
+            # Try to extract from URL
             url_parts = product_url.split('/')
             for part in url_parts:
                 if part and not part.isdigit() and part not in ['catalogue', 'books', 'index.html']:
-                    # Could be a category
                     product['category'] = part.replace('-', ' ').title()
                     break
         
@@ -132,32 +180,33 @@ class ECommerceScraper:
         product_urls = []
         
         for page in range(1, max_pages + 1):
-            # Handle pagination correctly
             if page == 1:
                 page_url = listing_url
             else:
-                # Replace page number in URL
                 page_url = listing_url.replace('page-1', f'page-{page}')
             
             soup = self.fetch_page(page_url)
             if not soup:
                 break
             
-            # Find all book links - they're in h3 tags with anchor tags
+            # Find all book links
             book_links = soup.select('h3 a')
+            if not book_links:
+                # Try alternative selectors
+                book_links = soup.select('.product-item a')
+            if not book_links:
+                book_links = soup.select('.product a')
+            
             for link in book_links:
                 href = link.get('href')
                 if href:
-                    # Construct full URL correctly
                     if href.startswith('catalogue/'):
                         full_url = f"{self.base_url}/{href}"
                     elif href.startswith('../'):
-                        # Handle relative paths
                         full_url = urljoin(self.base_url, href.replace('../', 'catalogue/'))
                     else:
                         full_url = urljoin(self.base_url, href)
                     
-                    # Clean up the URL - ensure it has the correct format
                     if 'catalogue' not in full_url:
                         full_url = full_url.replace(self.base_url + '/', self.base_url + '/catalogue/')
                     
@@ -170,10 +219,6 @@ class ECommerceScraper:
         return product_urls
     
     def scrape_product_page(self, url: str) -> Optional[Dict]:
-        """
-        Scrape a single product page.
-        Returns a product dictionary or None if failed.
-        """
         try:
             soup = self.fetch_page(url)
             if not soup:
@@ -181,7 +226,6 @@ class ECommerceScraper:
             
             product = self.extract_product_info(soup, url)
             
-            # Only return if we have at least a name or price
             if product.get('name') != 'N/A' or product.get('price') != 'N/A':
                 self.products.append(product)
                 logger.info(f"✓ Scraped: {product['name']} - {product['currency']}{product['price']}")
@@ -194,16 +238,6 @@ class ECommerceScraper:
             return None
     
     def scrape_products(self, product_urls: List[str], delay: float = 1.0) -> List[Dict]:
-        """
-        Scrape multiple products from a list of URLs.
-        
-        Args:
-            product_urls: List of product URLs
-            delay: Delay between requests in seconds
-            
-        Returns:
-            List of product dictionaries
-        """
         logger.info(f"Starting to scrape {len(product_urls)} products")
         
         products = []
@@ -217,7 +251,6 @@ class ECommerceScraper:
             else:
                 logger.warning(f"✗ Failed to scrape product {idx}")
             
-            # Random delay to be respectful
             time.sleep(delay + random.uniform(0, 0.5))
         
         logger.info(f"Successfully scraped {len(products)} products")
@@ -295,43 +328,35 @@ def main():
     print("📚 E-COMMERCE BOOK SCRAPER - BOOKS.TOSCRAPE.COM")
     print("="*60 + "\n")
     
-    # Using the safe practice website
     BASE_URL = "https://books.toscrape.com"
     LISTING_URL = "https://books.toscrape.com/catalogue/page-1.html"
     
     print(f"📍 Target: {BASE_URL}")
     print(f"📄 Listing: {LISTING_URL}\n")
     
-    # Initialize scraper
     scraper = ECommerceScraper(BASE_URL)
     
     try:
-        # Step 1: Collect product URLs
         print("📋 Step 1: Collecting product URLs...")
         product_urls = scraper.scrape_product_listing(LISTING_URL, max_pages=3)
         
         if not product_urls:
             print("❌ No product URLs found.")
-            print("💡 The website structure might have changed or there's a connection issue.")
             return
         
         print(f"✅ Found {len(product_urls)} product URLs\n")
         
-        # Step 2: Scrape individual products (limit to avoid being too slow)
         print("📊 Step 2: Scraping product data...")
         products = scraper.scrape_products(product_urls[:10], delay=1.0)
         
         if not products:
-            print("❌ No products were scraped successfully.")
-            print("💡 Check if the website is accessible and the selectors are correct.")
+            print("❌ No products were scraped.")
             return
         
-        # Step 3: Save data
         print("\n💾 Step 3: Saving data...")
         scraper.save_to_csv()
         scraper.save_to_json()
         
-        # Step 4: Display statistics
         stats = scraper.get_statistics()
         print("\n📈 Statistics:")
         print("-" * 40)
@@ -339,10 +364,9 @@ def main():
         print(f"Products with Prices: {stats['products_with_price']}")
         print(f"Products with Ratings: {stats['products_with_rating']}")
         if stats.get('average_price'):
-            print(f"Average Price: £{stats['average_price']:.2f}")
+            print(f"Average Price: ${stats['average_price']:.2f}")
         print("-" * 40)
         
-        # Step 5: Preview data
         print("\n🔍 Sample Products (first 5):")
         print("=" * 60)
         for i, product in enumerate(products[:5], 1):
@@ -360,7 +384,6 @@ def main():
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         print(f"\n❌ Error: {e}")
-        print("💡 Check scraper.log for more details.")
 
 
 if __name__ == "__main__":
