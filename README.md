@@ -491,5 +491,7 @@ Software Development Intern — SkillCraft Technology
 
 This project is developed for educational and learning purposes as part of the SkillCraft Technology Software Development Internship.
 
+---
+
 ### ⭐ **Show Your Support**
 If you found this project useful, please give it a ⭐ on GitHub!
