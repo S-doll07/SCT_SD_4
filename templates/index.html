@@ -318,6 +318,114 @@
         .log-entry:last-child { border-bottom: none; }
 
         /* ========================================
+           CURRENCY SELECTOR
+           ======================================== */
+        .currency-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px 4px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .currency-selector label {
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .currency-selector select {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .currency-selector select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .currency-selector select:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* ========================================
+           SETTINGS
+           ======================================== */
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .settings-card { background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); transition: all var(--transition-speed) ease; }
+        .settings-card:hover { box-shadow: var(--shadow-hover); }
+        .settings-card h3 { color: var(--text-primary); margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+
+        .theme-option {
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px;
+            cursor: pointer; transition: all var(--transition-speed) ease; border: 2px solid transparent; margin: 4px 0;
+        }
+        .theme-option:hover { background: var(--bg-primary); }
+        .theme-option.active { border-color: var(--btn-primary); background: var(--bg-primary); }
+        .theme-option .color-preview { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .theme-option .theme-name { font-weight: 500; color: var(--text-primary); }
+        .theme-option .theme-desc { font-size: 12px; color: var(--text-muted); }
+        .theme-option .check { margin-left: auto; color: var(--btn-primary); font-size: 18px; }
+
+        /* Currency settings card */
+        .currency-settings {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .currency-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .currency-option:hover {
+            border-color: var(--btn-primary);
+            background: var(--bg-card);
+        }
+
+        .currency-option.active {
+            border-color: var(--btn-primary);
+            background: var(--btn-primary);
+            color: white;
+        }
+
+        .currency-option .currency-flag {
+            display: block;
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .currency-option .currency-code {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .currency-option .currency-symbol {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* ========================================
            RESPONSIVE
            ======================================== */
         @media (max-width: 768px) {
@@ -334,6 +442,8 @@
             .page-header .header-right { width: 100%; justify-content: center; }
             .compare-container { grid-template-columns: 1fr; }
             .products-grid { grid-template-columns: 1fr 1fr; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .currency-option { min-width: 60px; }
         }
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr; }
@@ -350,22 +460,6 @@
         }
         .mobile-sidebar-toggle:hover { transform: scale(1.1); }
         @media (max-width: 768px) { .mobile-sidebar-toggle { display: flex; align-items: center; justify-content: center; } }
-
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .settings-card { background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); transition: all var(--transition-speed) ease; }
-        .settings-card:hover { box-shadow: var(--shadow-hover); }
-        .settings-card h3 { color: var(--text-primary); margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
-
-        .theme-option {
-            display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px;
-            cursor: pointer; transition: all var(--transition-speed) ease; border: 2px solid transparent; margin: 4px 0;
-        }
-        .theme-option:hover { background: var(--bg-primary); }
-        .theme-option.active { border-color: var(--btn-primary); background: var(--bg-primary); }
-        .theme-option .color-preview { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border-color); }
-        .theme-option .theme-name { font-weight: 500; color: var(--text-primary); }
-        .theme-option .theme-desc { font-size: 12px; color: var(--text-muted); }
-        .theme-option .check { margin-left: auto; color: var(--btn-primary); font-size: 18px; }
     </style>
 </head>
 <body>
@@ -448,6 +542,14 @@
                     <div class="header-right">
                         <span class="shortcut-hint"><i class="fas fa-keyboard"></i> Ctrl+Enter to scrape</span>
                         <span id="statusBadge" class="status-badge ready"><i class="fas fa-circle"></i> Ready</span>
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
                         <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -462,8 +564,8 @@
                         <div class="label">🌐 Total Products</div>
                     </div>
                     <div class="stat-card" style="border-left-color: #28a745;">
-                        <div class="stat-icon"><i class="fas fa-pound-sign"></i></div>
-                        <div class="value" id="avgPrice">£0.00</div>
+                        <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                        <div class="value" id="avgPrice">₹0.00</div>
                         <div class="label">💰 Average Price</div>
                     </div>
                     <div class="stat-card" style="border-left-color: #ffc107;">
@@ -490,7 +592,7 @@
                     </div>
                 </div>
 
-                <!-- Product List with Search, Sort and View Toggle -->
+                <!-- Product List -->
                 <div class="content-card">
                     <div class="card-title"><i class="fas fa-table"></i> Product List</div>
                     
@@ -582,6 +684,14 @@
                     <div class="header-right">
                         <span class="shortcut-hint"><i class="fas fa-keyboard"></i> Ctrl+Enter to scrape</span>
                         <span id="statusBadge2" class="status-badge ready"><i class="fas fa-circle"></i> Ready</span>
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect2" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
                         <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -635,7 +745,15 @@
                         <button class="btn btn-sm btn-secondary" onclick="exportChart('price')"><i class="fas fa-download"></i> Price Chart</button>
                         <button class="btn btn-sm btn-secondary" onclick="exportChart('category')"><i class="fas fa-download"></i> Category Chart</button>
                         <button class="btn btn-sm btn-secondary" onclick="exportChart('rating')"><i class="fas fa-download"></i> Rating Chart</button>
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect3" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -667,7 +785,15 @@
                         <div class="subtitle">Smart analysis of your product data</div>
                     </div>
                     <div class="header-right">
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect4" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -692,7 +818,7 @@
                     </div>
                     <div class="insight-card" style="background:var(--bg-card); padding:15px 20px; border-radius:12px; border:1px solid var(--border-color); display:flex; align-items:center; gap:15px;">
                         <div class="icon" style="font-size:28px; width:50px; height:50px; display:flex; align-items:center; justify-content:center; background:var(--bg-primary); border-radius:50%; flex-shrink:0;"><i class="fas fa-chart-line" style="color:var(--btn-info);"></i></div>
-                        <div class="info" style="flex:1;">
+                        <div class="info" style:flex:1;>
                             <div class="title" style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">📊 Price Range</div>
                             <div class="value" id="priceRange" style="font-size:16px; font-weight:bold; color:var(--text-primary);">-</div>
                             <div class="sub" style="font-size:11px; color:var(--text-muted);">💰 Min - Max price</div>
@@ -719,7 +845,15 @@
                         <div class="subtitle">Export your data in various formats</div>
                     </div>
                     <div class="header-right">
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect5" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -757,7 +891,15 @@
                         <div class="subtitle">Save and load your data sessions</div>
                     </div>
                     <div class="header-right">
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect6" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -786,7 +928,15 @@
                     <div class="header-right">
                         <button class="btn btn-sm btn-secondary" onclick="clearLogs()"><i class="fas fa-trash"></i> Clear Logs</button>
                         <button class="btn btn-sm btn-primary" onclick="fetchLogs()"><i class="fas fa-sync"></i> Refresh</button>
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect7" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -811,7 +961,15 @@
                         <div class="subtitle">Customize your experience</div>
                     </div>
                     <div class="header-right">
-                        <button class="logout-btn" onclick="logout()" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 6px;">
+                        <div class="currency-selector">
+                            <label><i class="fas fa-coins"></i></label>
+                            <select id="currencySelect8" onchange="changeCurrency()">
+                                <option value="INR">🇮🇳 ₹ INR</option>
+                                <option value="USD">🇺🇸 $ USD</option>
+                                <option value="EUR">🇪🇺 € EUR</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </div>
@@ -880,6 +1038,31 @@
                         </div>
                     </div>
 
+                    <!-- Currency Settings Card -->
+                    <div class="settings-card">
+                        <h3><i class="fas fa-coins"></i> Currency Settings</h3>
+                        <p style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">
+                            Select your preferred currency for price display
+                        </p>
+                        <div class="currency-settings">
+                            <div class="currency-option" data-currency="INR" onclick="selectCurrency('INR')">
+                                <span class="currency-flag">🇮🇳</span>
+                                <span class="currency-code">INR</span>
+                                <span class="currency-symbol">₹</span>
+                            </div>
+                            <div class="currency-option" data-currency="USD" onclick="selectCurrency('USD')">
+                                <span class="currency-flag">🇺🇸</span>
+                                <span class="currency-code">USD</span>
+                                <span class="currency-symbol">$</span>
+                            </div>
+                            <div class="currency-option" data-currency="EUR" onclick="selectCurrency('EUR')">
+                                <span class="currency-flag">🇪🇺</span>
+                                <span class="currency-code">EUR</span>
+                                <span class="currency-symbol">€</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="settings-card" style="grid-column:1/-1;">
                         <h3><i class="fas fa-info-circle"></i> About</h3>
                         <p style="color:var(--text-secondary);">
@@ -925,6 +1108,7 @@
         let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
         let compareList = [];
         let dashboardFilteredProducts = [];
+        let currentCurrency = 'INR';
 
         // ========================================
         // LOGOUT
@@ -941,6 +1125,89 @@
                 }, 500);
             } catch (error) {
                 showToast('Error logging out', 'error');
+            }
+        }
+
+        // ========================================
+        // CURRENCY
+        // ========================================
+        async function changeCurrency() {
+            const selects = document.querySelectorAll('#currencySelect, #currencySelect2, #currencySelect3, #currencySelect4, #currencySelect5, #currencySelect6, #currencySelect7, #currencySelect8');
+            const currency = selects[0].value;
+            
+            selects.forEach(select => {
+                select.value = currency;
+            });
+            
+            document.querySelectorAll('.currency-option').forEach(option => {
+                option.classList.toggle('active', option.dataset.currency === currency);
+            });
+            
+            currentCurrency = currency;
+            
+            try {
+                const response = await fetch('/api/currency/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currency: currency })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ Currency changed to ${currency} (${data.symbol})`, 'success');
+                    await loadProducts();
+                }
+            } catch (error) {
+                showToast('Error changing currency', 'error');
+            }
+        }
+
+        async function selectCurrency(currency) {
+            const selects = document.querySelectorAll('#currencySelect, #currencySelect2, #currencySelect3, #currencySelect4, #currencySelect5, #currencySelect6, #currencySelect7, #currencySelect8');
+            selects.forEach(select => {
+                select.value = currency;
+            });
+            
+            document.querySelectorAll('.currency-option').forEach(option => {
+                option.classList.toggle('active', option.dataset.currency === currency);
+            });
+            
+            currentCurrency = currency;
+            
+            try {
+                const response = await fetch('/api/currency/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currency: currency })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ Currency changed to ${currency} (${data.symbol})`, 'success');
+                    await loadProducts();
+                }
+            } catch (error) {
+                showToast('Error changing currency', 'error');
+            }
+        }
+
+        async function loadCurrency() {
+            try {
+                const response = await fetch('/api/currency/current');
+                const data = await response.json();
+                const currency = data.currency || 'INR';
+                currentCurrency = currency;
+                
+                const selects = document.querySelectorAll('#currencySelect, #currencySelect2, #currencySelect3, #currencySelect4, #currencySelect5, #currencySelect6, #currencySelect7, #currencySelect8');
+                selects.forEach(select => {
+                    select.value = currency;
+                });
+                
+                document.querySelectorAll('.currency-option').forEach(option => {
+                    option.classList.toggle('active', option.dataset.currency === currency);
+                });
+            } catch (error) {
+                console.error('Error loading currency:', error);
             }
         }
 
@@ -1202,28 +1469,46 @@
                 ['#d63384', '#e83e8c', '#f06292', '#f48fb1', '#ce93d8', '#ab47bc', '#6f42c1'] :
                 ['#d63384', '#e83e8c', '#f06292', '#f48fb1', '#ce93d8', '#ab47bc', '#6f42c1'];
 
-            const priceRanges = { '£0-10': 0, '£10-20': 0, '£20-30': 0, '£30-40': 0, '£40-50': 0, '£50-60': 0,
-                '£60+': 0 };
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
+
+            const priceRanges = { 
+                '0-10': 0, '10-20': 0, '20-30': 0, '30-40': 0, '40-50': 0, '50-60': 0, '60+': 0 
+            };
             products.forEach(p => {
                 const price = parseFloat(p.price) || 0;
-                if (price < 10) priceRanges['£0-10']++;
-                else if (price < 20) priceRanges['£10-20']++;
-                else if (price < 30) priceRanges['£20-30']++;
-                else if (price < 40) priceRanges['£30-40']++;
-                else if (price < 50) priceRanges['£40-50']++;
-                else if (price < 60) priceRanges['£50-60']++;
-                else priceRanges['£60+']++;
+                if (price < 10) priceRanges['0-10']++;
+                else if (price < 20) priceRanges['10-20']++;
+                else if (price < 30) priceRanges['20-30']++;
+                else if (price < 40) priceRanges['30-40']++;
+                else if (price < 50) priceRanges['40-50']++;
+                else if (price < 60) priceRanges['50-60']++;
+                else priceRanges['60+']++;
             });
 
+            const labels = Object.keys(priceRanges).map(k => `${currencySymbol}${k}`);
             const priceCtx = document.getElementById('priceChart').getContext('2d');
             chartInstances.price = new Chart(priceCtx, {
                 type: 'bar',
-                data: { labels: Object.keys(priceRanges), datasets: [{ label: 'Number of Books', data: Object
-                            .values(priceRanges), backgroundColor: barColors, borderRadius: 5,
-                        borderColor: isDark ? '#4a2a4a' : '#ffffff', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 } },
-                    x: { ticks: { color: textColor } } } }
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        label: 'Number of Books', 
+                        data: Object.values(priceRanges), 
+                        backgroundColor: barColors, 
+                        borderRadius: 5,
+                        borderColor: isDark ? '#4a2a4a' : '#ffffff', 
+                        borderWidth: 1 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: true, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 } },
+                        x: { ticks: { color: textColor } } 
+                    } 
+                }
             });
 
             const categories = {};
@@ -1240,11 +1525,25 @@
             const categoryCtx = document.getElementById('categoryChart').getContext('2d');
             chartInstances.category = new Chart(categoryCtx, {
                 type: 'pie',
-                data: { labels: catLabels, datasets: [{ data: catValues, backgroundColor: colors.slice(0,
-                            catLabels.length), borderColor: isDark ? '#2d1b2e' : '#ffffff',
-                        borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'right',
-                            labels: { color: textColor, font: { size: 10 } } } } }
+                data: { 
+                    labels: catLabels, 
+                    datasets: [{ 
+                        data: catValues, 
+                        backgroundColor: colors.slice(0, catLabels.length), 
+                        borderColor: isDark ? '#2d1b2e' : '#ffffff',
+                        borderWidth: 2 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: true, 
+                    plugins: { 
+                        legend: { 
+                            position: 'right',
+                            labels: { color: textColor, font: { size: 10 } } 
+                        } 
+                    } 
+                }
             });
 
             const ratings = {};
@@ -1260,12 +1559,26 @@
             const ratingCtx = document.getElementById('ratingChart').getContext('2d');
             chartInstances.rating = new Chart(ratingCtx, {
                 type: 'bar',
-                data: { labels: ratingLabels.map(r => `${r} ⭐`), datasets: [{ label: 'Number of Books',
-                        data: ratingValues, backgroundColor: isDark ? '#f06292' : '#d63384', borderRadius: 5,
-                        borderColor: isDark ? '#4a2a4a' : '#ffffff', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 } },
-                    x: { ticks: { color: textColor } } } }
+                data: { 
+                    labels: ratingLabels.map(r => `${r} ⭐`), 
+                    datasets: [{ 
+                        label: 'Number of Books',
+                        data: ratingValues, 
+                        backgroundColor: isDark ? '#f06292' : '#d63384', 
+                        borderRadius: 5,
+                        borderColor: isDark ? '#4a2a4a' : '#ffffff', 
+                        borderWidth: 1 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: true, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 } },
+                        x: { ticks: { color: textColor } } 
+                    } 
+                }
             });
         }
 
@@ -1281,6 +1594,7 @@
                 return;
             }
 
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
             const topRated = products.reduce((a, b) => (parseInt(a.rating) || 0) > (parseInt(b.rating) || 0) ? a : b);
             document.getElementById('topRated').textContent = topRated.name ? topRated.name.substring(0, 25) + '...' :
             'N/A';
@@ -1296,7 +1610,7 @@
             const prices = products.map(p => parseFloat(p.price) || 0).filter(p => p > 0);
             if (prices.length > 0) {
                 document.getElementById('priceRange').textContent =
-                    `£${Math.min(...prices).toFixed(2)} - £${Math.max(...prices).toFixed(2)}`;
+                    `${currencySymbol}${Math.min(...prices).toFixed(2)} - ${currencySymbol}${Math.max(...prices).toFixed(2)}`;
             } else {
                 document.getElementById('priceRange').textContent = 'N/A';
             }
@@ -1317,17 +1631,18 @@
                 return;
             }
 
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
             const prices = products.map(p => parseFloat(p.price) || 0).filter(p => p > 0);
             const ratings = products.map(p => parseInt(p.rating) || 0);
 
-            document.getElementById('qsCheapest').textContent = prices.length > 0 ? `£${Math.min(...prices).toFixed(2)}` :
+            document.getElementById('qsCheapest').textContent = prices.length > 0 ? `${currencySymbol}${Math.min(...prices).toFixed(2)}` :
                 '-';
-            document.getElementById('qsExpensive').textContent = prices.length > 0 ? `£${Math.max(...prices).toFixed(2)}` :
+            document.getElementById('qsExpensive').textContent = prices.length > 0 ? `${currencySymbol}${Math.max(...prices).toFixed(2)}` :
                 '-';
             document.getElementById('qsAvgRating').textContent = ratings.length > 0 ? (ratings.reduce((a, b) => a + b,
                 0) / ratings.length).toFixed(1) : '-';
             document.getElementById('qsTotalValue').textContent = prices.length > 0 ?
-                `£${prices.reduce((a, b) => a + b, 0).toFixed(2)}` : '-';
+                `${currencySymbol}${prices.reduce((a, b) => a + b, 0).toFixed(2)}` : '-';
         }
 
         // ========================================
@@ -1382,6 +1697,8 @@
                 return;
             }
 
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
+
             let html = '<h3 style="color:var(--text-primary);">📊 Product Comparison</h3>';
             html += '<div class="compare-container">';
 
@@ -1392,7 +1709,7 @@
                 html += `
                     <div class="compare-card ${index === 0 ? 'compare-first' : 'compare-second'}">
                         <div class="compare-name">${product.name}</div>
-                        <div class="compare-price">${product.currency || '£'}${product.price}</div>
+                        <div class="compare-price">${currencySymbol}${product.price}</div>
                         <div class="compare-rating">${stars}</div>
                         <div>📦 ${product.availability || 'N/A'}</div>
                         <div>📂 ${product.category || 'Uncategorized'}</div>
@@ -1549,6 +1866,8 @@
                 return;
             }
 
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
+
             if (isGrid) {
                 let html = '<div class="products-grid">';
                 products.forEach(product => {
@@ -1565,7 +1884,7 @@
                                     <i class="fas fa-heart"></i>
                                 </button>
                             </div>
-                            <div class="card-price">${product.currency || '£'}${product.price}</div>
+                            <div class="card-price">${currencySymbol}${product.price}</div>
                             <div class="card-rating">${stars}</div>
                             <div>📦 ${product.availability || 'N/A'}</div>
                             <div class="card-category">${product.category || 'Uncategorized'}</div>
@@ -1616,7 +1935,7 @@
                                 </button>
                                 <strong>${product.name || 'N/A'}${nameBadge}</strong>
                             </td>
-                            <td>${product.currency || '£'}${product.price || 'N/A'}</td>
+                            <td>${currencySymbol}${product.price || 'N/A'}</td>
                             <td><span class="rating-stars">${stars}</span></td>
                             <td>${availabilityBadge}</td>
                             <td><span class="badge badge-info">${product.category || 'Uncategorized'}</span></td>
@@ -1650,6 +1969,8 @@
                     return;
                 }
 
+                const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
+
                 let html = `<h3 style="color:var(--text-primary);">📈 Price History: ${productName}</h3>`;
                 html += '<table style="width:100%; border-collapse:collapse; margin-top:10px;">';
                 html +=
@@ -1658,7 +1979,7 @@
                     const date = new Date(item.timestamp).toLocaleDateString();
                     html +=
                         `<tr><td style="padding:8px; border-bottom:1px solid var(--border-color);">${date}</td>
-                                <td style="padding:8px; border-bottom:1px solid var(--border-color);">£${item.price.toFixed(2)}</td></tr>`;
+                                <td style="padding:8px; border-bottom:1px solid var(--border-color);">${currencySymbol}${item.price.toFixed(2)}</td></tr>`;
                 });
                 html += '</table>';
                 html += `
@@ -1748,6 +2069,8 @@
                 return;
             }
             const previewData = allProducts.slice(0, 10);
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
+            
             let html = '<h3 style="color:var(--text-primary);">📊 Data Preview</h3>';
             html += `<p style="color:var(--text-secondary);">Showing 10 of ${allProducts.length} products</p>`;
             html +=
@@ -2110,17 +2433,18 @@
         function updateStats(products) {
             if (!products || products.length === 0) {
                 document.getElementById('totalProducts').textContent = '0';
-                document.getElementById('avgPrice').textContent = '£0.00';
+                document.getElementById('avgPrice').textContent = '₹0.00';
                 document.getElementById('avgRating').textContent = '0.0';
                 document.getElementById('categoriesCount').textContent = '0';
                 return;
             }
 
+            const currencySymbol = currentCurrency === 'INR' ? '₹' : currentCurrency === 'EUR' ? '€' : '$';
             document.getElementById('totalProducts').textContent = products.length;
 
             const prices = products.map(p => parseFloat(p.price) || 0);
             const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-            document.getElementById('avgPrice').textContent = `£${avgPrice.toFixed(2)}`;
+            document.getElementById('avgPrice').textContent = `${currencySymbol}${avgPrice.toFixed(2)}`;
 
             const ratings = products.map(p => parseInt(p.rating) || 0);
             const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
@@ -2180,6 +2504,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadTheme();
             loadSettings();
+            loadCurrency();
             loadProducts();
 
             document.getElementById('urlInput').addEventListener('change', saveSettings);
@@ -2238,6 +2563,9 @@
         window.generateSmartTags = generateSmartTags;
         window.isWishlisted = isWishlisted;
         window.logout = logout;
+        window.changeCurrency = changeCurrency;
+        window.selectCurrency = selectCurrency;
+        window.loadCurrency = loadCurrency;
     </script>
 </body>
 </html>
