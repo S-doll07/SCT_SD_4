@@ -251,6 +251,8 @@ You can change currency from:
 - **Header Dropdown**: Quick access on every page
 - **Settings Page**: With visual currency options
 
+---
+
 ## 📸 Screenshots
 
 ### 🔐 Login Page
