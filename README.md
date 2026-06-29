@@ -181,8 +181,12 @@ Navigate to: http://127.0.0.1:5000
 | **Password** | `demo123` |
 
 Or use any username/password - the system accepts any non-empty credentials!
+
 ---
-### 📁 **Project Structure**
+
+## 📁 Project Structure
+
+```text
 web-scraper-pro/
 │
 ├── 📁 templates/              # HTML templates
@@ -213,51 +217,56 @@ web-scraper-pro/
 ├── 📄 setup.py1               # Setup script
 ├── 📄 summary.py1             # Summary script
 └── 📄 setup.sh                # Linux setup script
+```
+
+
 ---
-### 🎯 **How to Use**
+
+## 🎯 **How to Use**
+
 #1. Login
-   ->Navigate to http://127.0.0.1:5000
-   ->Enter username and password
-   ->Click "Login" or use "Quick Login"
+   - Navigate to http://127.0.0.1:5000
+   - Enter username and password
+   - Click "Login" or use "Quick Login"
 
 #2. Scrape Products
-   ->Go to Scraping page from sidebar
-   ->Enter website URL (default: https://books.toscrape.com/catalogue/page-1.html)
-   ->Set max pages and max products
-   ->Click "Start Scraping"
-   ->Watch real-time progress and logs
+   - Go to Scraping page from sidebar
+   - Enter website URL (default: https://books.toscrape.com/catalogue/page-1.html)
+   - Set max pages and max products
+   - Click "Start Scraping"
+   - Watch real-time progress and logs
 
 #3. Explore Dashboard
-   ->Go to Dashboard page
-   ->View statistics: total products, average price, average rating, categories
-   ->Use search, filter, and sort options
-   ->Toggle between Table View and Grid View
-
-- ❤️ Click heart to add to wishlist
-- ⚖️ Click compare on 2 products
+   - Go to Dashboard page
+   - View statistics: total products, average price, average rating, categories
+   - Use search, filter, and sort options
+   - Toggle between Table View and Grid View
+   - ❤️ Click heart to add to wishlist
+   - ⚖️ Click compare on 2 products
 
 #4. View Charts
-   ->Go to Charts page
-   ->View price, category, and rating distributions
-   ->Click "Export Chart" to download as PNG
+   - Go to Charts page
+   - View price, category, and rating distributions
+   - Click "Export Chart" to download as PNG
 
 #5. Export Data
-   ->Go to Export page
-   ->Choose export format: CSV, JSON, Excel
-   ->Generate HTML report or QR code
+   - Go to Export page
+   - Choose export format: CSV, JSON, Excel
+   - Generate HTML report or QR code
 
 #6. Manage Sessions
-   ->Go to Sessions page
-   ->Save current session with a name
-   ->Load any saved session
-   ->Delete unwanted sessions
+   - Go to Sessions page
+   - Save current session with a name
+   - Load any saved session
+   - Delete unwanted sessions
 
 #7. Customize Settings
-   ->Go to Settings page
-   ->Choose from 5 themes
-   ->Toggle Dark Mode
-   ->Enable/disable Auto-refresh logs
-   ->Enable/disable Desktop Notifications
+   - Go to Settings page
+   - Choose from 5 themes
+   - Toggle Dark Mode
+   - Enable/disable Auto-refresh logs
+   - Enable/disable Desktop Notifications
+
 ---
 
 ### ⌨️ **Keyboard Shortcuts**
